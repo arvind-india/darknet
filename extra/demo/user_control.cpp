@@ -7,14 +7,11 @@
 //
 //
 //
-
+#include "demo.h"
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/highgui/highgui.hpp>
-
-#include "demo.h"
-
 
 const char *gDemoPanelName = "FaceDemo";
 const char *gResolutionCtrl = "Image resolution";
@@ -22,7 +19,9 @@ const char *gDetectionThrCtrl = "Detection threshold";
 
 const int gDetThrMax = 100;
 const int gDetThrRst = 25;
+const int gDetThrMin = 10;
 const int gImageResMax = 640;
+const int gImageResMin = 288;
 const int gImageResRst = 416;
 
 int gDetThr;
@@ -35,16 +34,33 @@ void ResetUserCtrlVals() {
   gDemoCtx.ctrl.hw = ACCEL_NEON;
 }
 
-void DemoControlCallback(int, void*) {
+void DetThrCallback(int, void*) {
   pthread_mutex_lock(&gDemoCtxLock);
-  gDemoCtx.ctrl.det_thr = (float)gDetThr / gDetThrMax;
+  float new_thr;
+
+  if (gDetThr < gDetThrMin) {
+    new_thr = (float)gDetThrMin / gDetThrMax;
+  } else {
+    new_thr = (float)gDetThr / gDetThrMax;
+  }
+  gDemoCtx.ctrl.det_thr = new_thr;
+  printf("Changing detection threshold to %.2f\n", gDemoCtx.ctrl.det_thr);
+  pthread_mutex_unlock(&gDemoCtxLock);
+}
+
+void NetResCallback(int, void*) {
+  pthread_mutex_lock(&gDemoCtxLock);
+
   int new_res = (gImageRes / 32 + 1) * 32;
+  if (new_res < gImageResMin) {
+    new_res = gImageResMin;
+  } else if (new_res > gImageResMax) {
+    new_res = gImageResMax;
+  }
   if (gDemoCtx.ctrl.resolution != new_res) {
     gDemoCtx.ctrl.resolution = new_res;
     printf("Changing input image resolution to %d\n", gDemoCtx.ctrl.resolution);
   }
-
-  printf("Changing detection threshold to %.2f\n", gDemoCtx.ctrl.det_thr);
 
   pthread_mutex_unlock(&gDemoCtxLock);
 }
@@ -60,14 +76,14 @@ bool InitDemoPanel() {
 
   // Trackbar for detection threshold
   cv::createTrackbar(gDetectionThrCtrl, gDemoPanelName, &gDetThr,
-                     gDetThrMax, DemoControlCallback);
+                     gDetThrMax, DetThrCallback);
 
   // Trackbar for image resolution
   cv::createTrackbar(gResolutionCtrl, gDemoPanelName, &gImageRes,
-                     gImageResMax, DemoControlCallback);
+                     gImageResMax, NetResCallback);
 
-  //cv::createButton("dummy_button", my_button_cb, NULL, QT_PUSH_BUTTON, 0);
-  cv::createButton("button5",my_button_cb,NULL, cv::QT_RADIOBOX, 0);
+  // this does not showup in the GUI.
+  //cv::createButton("button5",my_button_cb,NULL, CV_PUSH_BUTTON, 0);
   return true;
 }
 

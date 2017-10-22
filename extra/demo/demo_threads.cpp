@@ -23,17 +23,13 @@ void *DetectorThreadHandler(void *arg) {
   float det_thr = gDemoCtx.ctrl.det_thr;
   int old_res = gDemoCtx.net_cpu.h;
   if (new_res != old_res) {
-    printf("Input resolution changed. Resizing network...\n");
     // resize network
-    // assert(new_res % 32 == 0);
-    resize_network(&gDemoCtx.net_cpu, new_res, new_res);
-    // reallocate detection buffers
-    layer final_lyr = gDemoCtx.net_cpu.layers[gDemoCtx.net_cpu.n - 1];
-    ReallocateDetectionBuffers(gDemoCtx.net_cpu.batch, final_lyr.n,
-                               final_lyr.w, final_lyr.h, final_lyr.outputs);
+    UpdateNetResolution(new_res, new_res);
     // FIXME : need to discard previous activations
   }
   pthread_mutex_unlock(&gDemoCtxLock);
+  printf("Resolution : %dx%d\t Thr = %.2f\n", gDemoCtx.net_cpu.w,
+         gDemoCtx.net_cpu.h, det_thr);
   layer l = gDemoCtx.net_cpu.layers[gDemoCtx.net_cpu.n - 1];
   float *X = gDemoCtx.resized_image[(gDemoCtx.fb_cntr+2)%NO_IMAGE_BUFFERS].data;
   float *prediction = network_predict(gDemoCtx.net_cpu, X);
@@ -75,10 +71,11 @@ void *PreprocessThreadHandler(void *arg) {
   int net_h = gDemoCtx.net_cpu.h;
   int net_w = gDemoCtx.net_cpu.w;
   int fb_no = gDemoCtx.fb_cntr;
+  image cur_resized = gDemoCtx.resized_image[fb_no];
   pthread_mutex_unlock(&gDemoCtxLock);
   cv::Mat bgr_frame;
   image cur_frame = gDemoCtx.frame[fb_no];
-  image cur_resized = gDemoCtx.resized_image[fb_no];
+
 
   if (!gDemoCtx.demo_cam.read(bgr_frame)) {
     printf("Failed to read the frame from camera\n");

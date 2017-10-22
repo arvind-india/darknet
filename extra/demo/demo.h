@@ -79,7 +79,10 @@ bool InitDemoPanel();
 void ResetUserCtrlVals();
 bool DemoSetup();
 bool ReleaseDemoCtx();
-bool ReallocateDetectionBuffers(int b, int n, int w, int h, int no_outputs);
+bool UpdateNetResolution(int new_h, int new_w);
+bool ReallocateDetectionBuffers(int old_n, int old_h, int old_w,
+                                int new_n, int new_h, int new_w,
+                                int no_outputs);
 void *PreprocessThreadHandler(void *arg);
 void *DetectorThreadHandler(void *arg);
 void *DisplayThreadHandler(void *arg);

@@ -18,8 +18,9 @@ char *gGpuNetCfg = "../../cfg/tiny-yolo-voc.cfg";
 char *gNetModel = "../../models/tiny-yolo-voc.weights";
 char *gClassLabelFile = "../../data/voc.names";
 
-static bool AllocateDetectionBuffers(int b, int n, int w, int h, int no_outputs) {
-  gDemoCtx.avg_activations = (float *)malloc(no_outputs * sizeof(float));
+static bool AllocateDetectionBuffers(int n, int w, int h, int no_outputs) {
+  gDemoCtx.avg_activations = (float *)malloc(no_outputs* sizeof(float));
+
   gDemoCtx.predictions = (float **) calloc(gDemoCtx.det_avg_count, sizeof(float*));
   for(int f = 0; f < gDemoCtx.det_avg_count; ++f) {
     gDemoCtx.predictions[f] = (float *) calloc(no_outputs, sizeof(float));
@@ -27,26 +28,34 @@ static bool AllocateDetectionBuffers(int b, int n, int w, int h, int no_outputs)
 
   gDemoCtx.boxes = (box *)calloc(w * h * n, sizeof(box));
   gDemoCtx.probs = (float **)calloc(w * h * n, sizeof(float *));
-  for(int b = 0; b < w * h* n; ++b) {
+  for(int b = 0; b < w * h * n; ++b) {
     gDemoCtx.probs[b] = (float *)calloc(gDemoCtx.no_classes+1, sizeof(float));
   }
   return true;
 }
 
-bool ReallocateDetectionBuffers(int b, int n, int w, int h, int no_outputs) {
+bool ReallocateDetectionBuffers(int old_n, int old_h, int old_w,
+                                int new_n, int new_h, int new_w,
+                                int no_outputs) {
   gDemoCtx.avg_activations = (float *)realloc(gDemoCtx.avg_activations,
                                               no_outputs * sizeof(float));
+  //memset(gDemoCtx.avg_activations, 0, no_outputs * sizeof(float));
   for(int f = 0; f < gDemoCtx.det_avg_count; ++f) {
     // FIXME : need memset to 0 as the original allocation used calloc
     gDemoCtx.predictions[f] = (float *) realloc(gDemoCtx.predictions[f],
                                                 no_outputs * sizeof(float));
   }
+  for (int p = 0; p < old_w * old_h * old_n; p++) {
+    free(gDemoCtx.probs[p]);
+  }
 
-  gDemoCtx.boxes = (box *)realloc(gDemoCtx.boxes, w * h * n * sizeof(box));
-  gDemoCtx.probs = (float **)realloc(gDemoCtx.probs, w * h * n * sizeof(float *));
-  for(int b = 0; b < w * h* n; ++b) {
-    gDemoCtx.probs[b] = (float *)realloc(gDemoCtx.probs[b],
-                                         (gDemoCtx.no_classes+1) * sizeof(float));
+  gDemoCtx.boxes = (box *)realloc(gDemoCtx.boxes, new_w * new_h * new_n *
+                                  sizeof(box));
+  gDemoCtx.probs = (float **)realloc(gDemoCtx.probs, new_w * new_h * new_n *
+                                     sizeof(float *));
+
+  for(int b = 0; b < new_w * new_h* new_n; ++b) {
+    gDemoCtx.probs[b] = (float *)calloc(gDemoCtx.no_classes+1, sizeof(float));
   }
   return true;
 }
@@ -88,17 +97,24 @@ bool DemoNetInit() {
 
 
 // Update network input resolution
-bool UpdateNetResolution(int batch, int new_h, int new_w) {
-  assert(batch == 1);
-  set_batch_network(&gDemoCtx.net_cpu, batch);
+bool UpdateNetResolution(int new_h, int new_w) {
+  printf("Input resolution changed. Resizing network...\n");
   // resize network
+  layer final_lyr = gDemoCtx.net_cpu.layers[gDemoCtx.net_cpu.n - 1];
+  int old_n = final_lyr.n;
+  int old_h = final_lyr.h;
+  int old_w = final_lyr.w;
+  assert(new_h % 32 == 0);
   resize_network(&gDemoCtx.net_cpu, new_w, new_h);
-
-  layer l = gDemoCtx.net_cpu.layers[gDemoCtx.net_cpu.n - 1];
-  // TODO : assmed batch = 1
-  gDemoCtx.no_detections = l.n * l.h * l.w;
-  ReallocateDetectionBuffers(gDemoCtx.net_cpu.batch, l.n, l.w, l.h, l.outputs);
-
+  // reallocate detection buffers
+  final_lyr = gDemoCtx.net_cpu.layers[gDemoCtx.net_cpu.n - 1];
+  gDemoCtx.no_detections = final_lyr.n * final_lyr.h * final_lyr.w;
+  ReallocateDetectionBuffers(old_n, old_h, old_w, final_lyr.n,
+                             final_lyr.h, final_lyr.w, final_lyr.outputs);
+  for (int b = 0; b < NO_IMAGE_BUFFERS; b++) {
+    gDemoCtx.resized_image[b].h = gDemoCtx.net_cpu.h;
+    gDemoCtx.resized_image[b].w = gDemoCtx.net_cpu.w;
+  }
   return true;
 }
 
@@ -154,7 +170,7 @@ bool DemoBufferInit() {
 
   layer l = gDemoCtx.net_cpu.layers[gDemoCtx.net_cpu.n - 1];
   gDemoCtx.no_detections = l.n * l.h * l.w;
-  AllocateDetectionBuffers(gDemoCtx.net_cpu.batch, l.n, l.w, l.h, l.outputs);
+  AllocateDetectionBuffers(l.n, l.w, l.h, l.outputs);
 
   return true;
 }
