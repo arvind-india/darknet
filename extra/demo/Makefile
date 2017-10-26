@@ -46,5 +46,6 @@ obj:
 .PHONY: clean
 
 clean:
-	rm -rf $(OBJS)
+	rm -rf obj
+	rm -f $(EXEC)
 

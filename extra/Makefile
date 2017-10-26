@@ -44,4 +44,5 @@ obj:
 
 clean:
 	rm -rf $(OBJS) $(SLIB) $(ALIB)
+	rm -rf obj
 
