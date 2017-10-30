@@ -20,7 +20,7 @@ char *gGpuNetCfg = "../../cfg/tiny-yolo-voc.cfg";
 char *gNetModel = "../../models/tiny-yolo-voc.weights";
 char *gLowpNetModel = "../../models/tiny-yolo-voc_16bit.weights";
 char *gClassLabelFile = "../../data/voc.names";
-static const bool gUseLowpModel = true;
+static const bool gUseLowpModel = false;
 
 static bool AllocateDetectionBuffers(int n, int w, int h, int no_outputs) {
   gDemoCtx.avg_activations = (float *)malloc(no_outputs* sizeof(float));
