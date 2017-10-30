@@ -1,4 +1,5 @@
-DEBUG=0
+DEBUG=1
+GPU=1
 
 VPATH=./src
 SLIB=libdarknet_lowp.so

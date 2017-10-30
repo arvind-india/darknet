@@ -3,7 +3,7 @@ CUDNN=0
 OPENCV=1
 OPENMP=0
 DEBUG=0
-LOWP=0
+LOWP=1
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
       -gencode arch=compute_35,code=sm_35 \
@@ -60,6 +60,7 @@ LDFLAGS+= -lcudnn
 endif
 
 ifeq ($(LOWP), 1)
+CFLAGS+=-DLOWP
 LDFLAGS+= -L./extra -ldarknet_lowp
 endif
 

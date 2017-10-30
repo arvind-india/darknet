@@ -10,6 +10,9 @@
 #include "darknet.h"
 #include "lowp_darknet.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern void print_detector_detections(FILE **fps, char *id, box *boxes,
                                       float **probs, int total, int classes,
                                       int w, int h);
@@ -18,6 +21,9 @@ extern void print_cocos(FILE *fp, int image_id, box *boxes, float **probs,
 extern void print_imagenet_detections(FILE *fp, int id, box *boxes,
                                       float **probs, int total, int classes,
                                       int w, int h);
+#ifdef __cplusplus
+}
+#endif
 
 // Using functions from examples/detector.c with minor changes so as to keep
 // the original Darknet source files untouched.
@@ -86,6 +92,7 @@ void RunLowpDetector(char *datacfg, char *cfgfile, char *weightfile,
 
 void LowpValidateDetector(char *datacfg, char *cfgfile, char *weightfile,
                           char *outfile) {
+#if 0
   int j;
   list *options = read_data_cfg(datacfg);
   char *valid_images = option_find_str(options, "valid", "data/train.list");
@@ -211,6 +218,7 @@ void LowpValidateDetector(char *datacfg, char *cfgfile, char *weightfile,
     fclose(fp);
   }
   fprintf(stderr, "Total Detection Time: %f Seconds\n", what_time_is_it_now() - start);
+#endif
 }
 
 void LowpDetector(int argc, char **argv) {

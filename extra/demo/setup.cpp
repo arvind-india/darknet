@@ -9,14 +9,18 @@
 //
 #include "demo.h"
 #include "darknet.h"
+#include "lowp_darknet.h"
 #include <cstdio>
 #include <cassert>
+
 
 DemoCtx gDemoCtx;
 char *gCpuNetCfg = "../../cfg/tiny-yolo-voc.cfg";
 char *gGpuNetCfg = "../../cfg/tiny-yolo-voc.cfg";
 char *gNetModel = "../../models/tiny-yolo-voc.weights";
+char *gLowpNetModel = "../../models/tiny-yolo-voc_16bit.weights";
 char *gClassLabelFile = "../../data/voc.names";
+static const bool gUseLowpModel = true;
 
 static bool AllocateDetectionBuffers(int n, int w, int h, int no_outputs) {
   gDemoCtx.avg_activations = (float *)malloc(no_outputs* sizeof(float));
@@ -76,8 +80,6 @@ bool DemoCtxInit() {
   gDemoCtx.alphabet = load_alphabet();
   gDemoCtx.names = get_labels(gClassLabelFile);
 
-
-
   return true;
 }
 
@@ -85,7 +87,12 @@ bool DemoNetInit() {
   gDemoCtx.net_cpu = parse_network_cfg(gCpuNetCfg);
   //gDemoCtx.net_gpu = parse_network_cfg(gGpuNetCfg);
 
-  load_weights(&gDemoCtx.net_cpu, gNetModel);
+  if (gUseLowpModel) {
+    LoadLowpWeightsAsFloatUpto(&gDemoCtx.net_cpu, gLowpNetModel, 0,
+                               gDemoCtx.net_cpu.n);
+  } else {
+    load_weights(&gDemoCtx.net_cpu, gNetModel);
+  }
   //load_weights(&gDemoCtx.net_gpu, gNetModel);
 
   set_batch_network(&gDemoCtx.net_cpu, 1);

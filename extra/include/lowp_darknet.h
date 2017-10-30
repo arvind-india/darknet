@@ -13,6 +13,9 @@
 #include <stdbool.h>
 #include "darknet.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct {
   void *data;
   int bytes_per_ele;
@@ -60,5 +63,7 @@ void SaveWeightsAsLowpModelUpto(network net, char *filename, int cutoff,
 
 // API to convert floating point model to low precision model
 void CreateLowpModel(int argc, char **argv);
-
+#ifdef __cplusplus
+}
+#endif
 #endif  // EXTRA_LOWP_DARKNET_H_

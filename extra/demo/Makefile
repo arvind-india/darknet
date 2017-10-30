@@ -1,3 +1,4 @@
+export LD_LIBRARY_PATH+=../..
 DEBUG=1
 GPU=1
 EXEC=facedemo
@@ -8,8 +9,8 @@ CXX=g++
 AR=ar
 ARFLAGS=rcs
 OPTS=-Ofast
-LDFLAGS= -L../../ -lm -pthread -ldarknet `pkg-config --libs opencv`
-COMMON= -I../../include/
+LDFLAGS= -L../../ -L../ -lm -pthread -ldarknet -ldarknet_lowp `pkg-config --libs opencv`
+COMMON= -I../../include/ -I../include
 #CXXFLAGS=-Wall -Wno-unknown-pragmas -Wfatal-errors -fno-stack-protector
 CXXFLAGS=-Wall -Wno-unknown-pragmas -Wfatal-errors
 CXXFLAGS+= -Werror=implicit-function-declaration `pkg-config --cflags opencv`
