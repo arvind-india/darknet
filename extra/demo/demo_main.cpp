@@ -18,6 +18,7 @@
 
 bool gExitFlag = false;
 pthread_mutex_t gDemoCtxLock;
+double start_time;
 
 void ExitDemo(int signal) {
   if (!ReleaseDemoCtx()) {
@@ -49,6 +50,7 @@ bool StartDemo() {
 
 bool RunDemo() {
   while (!gExitFlag) {
+    start_time = what_time_is_it_now();
     if (pthread_create(&gDemoCtx.image_read_thread, 0,
                        PreprocessThreadHandler, 0)) {
       error("Thread creation failed");
@@ -61,7 +63,8 @@ bool RunDemo() {
     DisplayThreadHandler(NULL);
     pthread_join(gDemoCtx.image_read_thread, 0);
     pthread_join(gDemoCtx.neon_det_thread, 0);
-
+    float fps = 1 / (what_time_is_it_now() - start_time);
+    printf("FPS = %.2f\n", fps);
     gDemoCtx.fb_cntr = (gDemoCtx.fb_cntr + 1) % NO_IMAGE_BUFFERS;
   }
   return true;
